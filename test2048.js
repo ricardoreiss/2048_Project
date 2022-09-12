@@ -4,10 +4,65 @@ function Player2048(n) {
 
 	this.boardSize = n;
 
-	//KeyboardInputManager.prototype.targetIsInput = function(event) {
-		//return false;
-	//};
+	KeyboardInputManager.prototype.targetIsInput = function(event) {
+		return false;
+	};
 }
+
+Player2048.prototype.getCurrentState = function() {
+
+	var currentState = [];
+
+	for (var j = 0; j < this.boardSize; j++) {
+
+		for (var i = 0; i < this.boardSize; i++) {
+
+			var e = document.body.getElementsByClassName("tile-position-"
+					+ (i + 1) + "-" + (j + 1))[document.body
+					.getElementsByClassName("tile-position-" + (i + 1) + "-"
+							+ (j + 1)).length - 1];
+
+			/*
+			 * Getting element i,j value
+			 */
+			var value = e != undefined ? parseInt(e
+					.getElementsByClassName("tile-inner")[0].textContent) : 0;
+
+			currentState[i + j * this.boardSize] = value;
+		}
+	}
+
+	return currentState;
+};
+
+Player2048.prototype.move = function(direction) {
+
+	switch (direction) {
+	case 1:
+		this.simulateKeyEvent(38); // TOP
+		break;
+	case 2:
+		this.simulateKeyEvent(40); // DOWN
+		break;
+	case 3:
+		this.simulateKeyEvent(37); // LEFT
+		break;
+	case 4:
+		this.simulateKeyEvent(39); // RIGHT
+		break;
+	default:
+		console.log("invalid move");
+	}
+};
+
+Player2048.prototype.simulateKeyEvent = function(key) {
+
+	var e = new Event("keydown");
+
+	e.which = key;
+
+	document.dispatchEvent(e);
+};
 
 Player2048.prototype.simulateUp = function(current, i) {
 
@@ -144,7 +199,23 @@ Player2048.prototype.simulate = function(c, initial, end, increment, shift, F1,
 					* availableCells.length)]] = 2;
 	}
 
-	return [current.slice(0), totalMerged];
+	return [current.slice(), totalMerged, (availableCells.length) - 1];
+};
+
+Player2048.prototype.hasPossibleMoves = function(current) {
+
+	var a = [this.simulateUp(current),   this.simulateLeft(current),
+			 this.simulateDown(current), this.simulateRight(current)];
+
+	for (var i = 0; i < a.length; i++) {
+
+		for (var j = 0; j < a[i].length; j++)
+
+			if (a[i][j] != current[j])
+				return true;
+	}
+
+	return false;
 };
 
 Player2048.prototype.isEquals = function(a1, a2) {
@@ -159,29 +230,75 @@ Player2048.prototype.isEquals = function(a1, a2) {
 	return true;
 };
 
-
 Player2048.prototype.firstStep = function(step, current){
-	var steps = ["UP","DOWN","LEFT","RIGHT"]; 
-	//for (var i = 0; i < 1000; i++){
-		var Current = current.slice();
-		var Step = step;
-		for (var o = 0; o > -1; o++){
-			switch(Step){
-				case "UP":
-					Current = (this.simulateUp(Current, 3))[0];
+	var steps = ["UP","DOWN","LEFT","RIGHT"];
+	var result = [];
+	var voidCells = 0;
+	var merged = 0; 
+	var currentSimulated = current.slice();
+	var stepSimulated = step;
+	for (var o = 0; o < 7; o++){
+		switch(stepSimulated){
+			case "UP":
+				result = (this.simulateUp(currentSimulated, 3));
+				console.log(result);
 
-				case "DOWN":
-					Current = (this.simulateDown(Current, 3))[0];
+			case "DOWN":
+				result = (this.simulateDown(currentSimulated, 3));
 
-				case "LEFT":
-					Current = (this.simulateLeft(Current, 3))[0];
+			case "LEFT":
+				result = (this.simulateLeft(currentSimulated, 3));
 
-				case "RIGHT":
-					Current = (this.simulateRight(Current, 3))[0];
-			};
-
-			Step = steps[Math.floor(Math.random()*steps.length)];
-			console.log(Current);
+			case "RIGHT":
+				result = (this.simulateRight(currentSimulated, 3));
 		};
-	//};
+
+		if (o == 0 && step == "UP"){
+					console.log([current, result[0]]);
+		};
+
+		currentSimulated = result[0];
+		merged += result[1];
+
+		stepSimulated = steps[Math.floor(Math.random()*steps.length)];
+	};
+	voidCells = result[2];
+	return merged;
 };
+
+Player2048.prototype.resultSteps = function(current){
+	var resultUp = 0;
+	var resultDown = 0;
+	var resultLeft = 0;
+	var resultRight = 0; 
+
+	for (var o = 0; o < 100; o++){
+		resultUp += this.firstStep("UP", current);
+		resultDown += this.firstStep("DOWN", current);
+		resultLeft += this.firstStep("LEFT", current);
+		resultRight += this.firstStep("RIGHT", current);
+	};
+
+	return [resultUp, resultDown, resultLeft, resultRight];
+};
+
+Player2048.prototype.play = function() {
+
+	var self = this;
+
+	setTimeout(function() {
+
+		var values = self.resultSteps(self.getCurrentState());
+
+		var max = Math.max.apply(Math, values);
+		
+		console.log(values);
+		
+		self.move(values.indexOf(max) + 1);
+		
+	}, 100);
+};
+
+var player = new Player2048(4);
+
+player.play();
