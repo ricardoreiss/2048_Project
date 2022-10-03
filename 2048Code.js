@@ -6,7 +6,8 @@ function Player2048(n, width, depth) {
     this.width = width;
     this.depth = depth;
     this.valuemax = [];
-    this.depthyield = new Map([[1,[]],[2,[]],[3,[]],[4,[]],[5,[]],[6,[]],[7,[]],[8,[]],[9,[]],[10,[]]])
+    this.depthyield = new Map([[1,[]],[2,[]],[3,[]],[4,[]],[5,[]],[6,[]],[7,[]],[8,[]],[9,[]],[10,[]]]);
+	this.widthyield = new Map([[100,[]],[300,[]],[500,[]],[700,[]],[900,[]],[1100,[]],[1300,[]],[1500,[]],[1700,[]],[1900,[]]]);
 }
 
 Player2048.prototype.initialCurrent = function() {
@@ -239,13 +240,13 @@ Player2048.prototype.firstStep = function(step, current, depth){
 	return merged;
 };
 
-Player2048.prototype.resultSteps = function(current, depth){
+Player2048.prototype.resultSteps = function(current, depth, width){
 	var resultUp = 0;
 	var resultDown = 0;
 	var resultLeft = 0;
 	var resultRight = 0;
 
-	for (var o = 0; o < this.width; o++){
+	for (var o = 0; o < width; o++){
 		resultUp += this.firstStep("UP", current, depth);
 		resultDown += this.firstStep("DOWN", current, depth);
 		resultLeft += this.firstStep("LEFT", current, depth);
@@ -277,46 +278,62 @@ Player2048.prototype.move = function(direction, current) {
     return current[0];
 };
 
-Player2048.prototype.play = function(current, depth) {
+Player2048.prototype.play = function(current, depth, width, type) {
 	var self = this;
 
 	setTimeout(function() {
 
-		var values = self.resultSteps(current, depth);
+		var values = self.resultSteps(current, depth, width);
 		var max = Math.max.apply(Math, values);
 		
 		
 		current = self.move((values.indexOf(max) + 1), current);
 		
 		if (!(values.every((e) => e == -800000))){
-			self.play(current, depth);
-            //console.log(current, depth);
+			self.play(current, depth, width, type);
+            //console.log(current, depth, width);
 		}else{
-            console.log(current, depth);
+            console.log(current, depth, width, type);
             console.log("EndGame");
-            self.depthyield.get(depth).push(Math.max.apply(Math, current));
+			if (type == "depth"){
+				self.depthyield.get(depth).push(Math.max.apply(Math, current));
+			};
+			if (type == "width"){
+				self.widthyield.get(width).push(Math.max.apply(Math, current));
+			};
+            
         };
         
 	}, 100);
 };
 
-Player2048.prototype.incomeCalculation = function(){
-	this.width = 100;
+Player2048.prototype.incomeCalculationDepth = function(){
+	var width = 100;
 	for (var d = 1; d < 3; d++){
-        this.calculation(d)
+        this.calculation(d, width, "depth")
     }; 
     console.log("FIM");   
 };
 
-Player2048.prototype.calculation = function(depth){
+Player2048.prototype.incomeCalculationWidth = function(){
+	var depth = 1;
+	for (var w = 300; w < 500; w += 200){
+        this.calculation(depth, w, "width")
+    }; 
+    console.log("FIM");   
+};
 
-	console.log("Calculing...", depth)
+Player2048.prototype.calculation = function(depth, width, type){
+
+	console.log("Calculing...", depth, width)
         for (var t = 0; t < 100; t++){
             var current = this.initialCurrent();
-            this.play(current, depth);
+            this.play(current, depth, width, type);
         };
 };
 
 var player = new Player2048(4, 0, 0);
 
-player.incomeCalculation();
+player.incomeCalculationDepth();
+player.incomeCalculationWidth();
+
